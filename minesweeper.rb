@@ -10,6 +10,7 @@ module Minesweeper
       @revealed = false
       @row = row
       @col = col
+      @neighbors = []
     end
 
     def bombed?
@@ -28,22 +29,19 @@ module Minesweeper
     end
 
     def reveal
-      if revealed?
-        # error, you can't reveal it twice
-      elsif bombed?
-        # game ends, you lose
-      elsif flagged?
-        # you can't reveal it until you unflag it
-      else
-        # reveal the tile
-        # set revealed to true, so it gets
-        # displayed next time we render the board
+      # if revealed?
+      #   # error, you can't reveal it twice
+      # elsif bombed?
+      #   # game ends, you lose
+      # elsif flagged?
+      #   # you can't reveal it until you unflag it
+      # else
 
-        # calculate neighbor bomb count
         @revealed = true
         @neighbor_bomb_count = set_neighbor_bomb_count
+
         if @neighbor_bomb_count == 0
-          reveal(neighbors)
+          @neighbors.each { |neighbor| neighbor.reveal }
         end
       end
     end
@@ -65,12 +63,8 @@ module Minesweeper
     def set_neighbor_bomb_count
       adjacent_bombs = 0
 
-      neighbors.each do |neighbor_pos|
-        row, col = neighbor_pos
-        neighbor_tile = (board object).board[row][col]
-        if neighbor_tile.bombed? == true
-          adjacent_bombs += 1
-        end
+      @neighbors.each do |neighbor|
+        adjacent_bombs += 1 if neighbor_tile.bombed? == true
       end
 
       adjacent_bombs
@@ -80,7 +74,7 @@ module Minesweeper
   class Board
     attr_accessor :board, :num_of_bombs
 
-    def initialize(num_of_bombs = 3)
+    def initialize(num_of_bombs = 10)
       @num_of_bombs = num_of_bombs
       @board = build_board
     end
@@ -89,6 +83,18 @@ module Minesweeper
       board = Array.new(9) { Array.new }
       9.times{ |row| 9.times{ |col| board[row] << Tile.new(row, col) } }
       self.class.place_bombs(board, @num_of_bombs)
+
+      board.each do |row|
+        row.each do |tile|
+          neighbor_pos = tile.neighbors
+          neighbor_pos.each do |pos|
+            row, col = pos
+            tile.neighbors << board[row][col]
+          end
+        end
+      end
+
+      board
     end
 
     def render
@@ -135,4 +141,22 @@ module Minesweeper
 
   end
 
+  class Game
+
+    def initialize(board = Board.new)
+      @board = board
+    end
+
+    def play
+
+      # display the board
+      # prompt for move
+      # execute the move
+
+      # break if user quits or game is over
+
+    end
+
+
+  end
 end
