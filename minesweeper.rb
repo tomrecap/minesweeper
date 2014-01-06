@@ -76,7 +76,8 @@ module Minesweeper
     end
 
     def set_flag
-     @flagged = (@flagged ? false : true)
+      return nil if revealed?
+      @flagged = (@flagged ? false : true)
     end
 
   end
@@ -161,7 +162,9 @@ module Minesweeper
       won = true
       @board.each do |row|
         row.each do |tile|
-          won = false if (!tile.revealed? && !tile.bombed?)
+          if !tile.revealed? && !tile.bombed?
+            won = false
+          end
         end
       end
 
@@ -192,11 +195,19 @@ module Minesweeper
 
       loop do
         action, pos = player_turn
-        move_result = execute_move(action, pos)
+        execute_move(action, pos)
 
         break if game_over?
+        @board.render
       end
 
+      if @board.win?
+        puts "You win!"
+      else
+        puts "You lose!"
+      end
+
+      @board.render
       # display the board
       # prompt for move
       # execute the move
@@ -206,7 +217,7 @@ module Minesweeper
     end
 
     def game_over?
-      @board.board.lose? || @board.board.win?
+      @board.lose? || @board.win?
     end
 
     def player_turn
@@ -221,10 +232,11 @@ module Minesweeper
     def execute_move(action, pos)
       x, y = pos
       if action == "r"
-        @board.board[x][y].reveal
+        @board.board[x.to_i][y.to_i].reveal
       elsif action == "f"
-        @board.board[x][y].set_flag
+        @board.board[x.to_i][y.to_i].set_flag
       end
+      nil
     end
 
   end
