@@ -2,7 +2,7 @@ require 'debugger'
 
 module Minesweeper
   class Tile
-    attr_accessor :bombed, :flagged, :revealed
+    attr_accessor :bombed, :flagged, :revealed, :neighbors, :row, :col, :neighbor_bomb_count
 
     def initialize(row, col, bombed = false)
       @bombed
@@ -41,12 +41,20 @@ module Minesweeper
         @neighbor_bomb_count = set_neighbor_bomb_count
 
         if @neighbor_bomb_count == 0
-          @neighbors.each { |neighbor| neighbor.reveal }
+          @neighbors.each do |neighbor|
+            neighbor.reveal unless neighbor.revealed?
+          end
         end
-      end
+
+        nil
+      # end
     end
 
-    def neighbors
+    def to_s
+      "String!"
+    end
+
+    def find_neighbors
       adj_pos = []
 
       (-1..1).each do |i|
@@ -56,7 +64,7 @@ module Minesweeper
       end
 
       adj_pos.delete_if do |pos|
-        pos.any?{ |coord| coord < 0 } || pos == [@row, @col]
+        pos.any?{ |coord| !coord.between?(0,8) } || pos == [@row, @col]
       end
     end
 
@@ -64,7 +72,7 @@ module Minesweeper
       adjacent_bombs = 0
 
       @neighbors.each do |neighbor|
-        adjacent_bombs += 1 if neighbor_tile.bombed? == true
+        adjacent_bombs += 1 if neighbor.bombed? == true
       end
 
       adjacent_bombs
@@ -77,30 +85,37 @@ module Minesweeper
     def initialize(num_of_bombs = 10)
       @num_of_bombs = num_of_bombs
       @board = build_board
+      set_neighbors
+    end
+
+    def to_s
+      "Board"
     end
 
     def build_board
-      board = Array.new(9) { Array.new }
-      9.times{ |row| 9.times{ |col| board[row] << Tile.new(row, col) } }
-      self.class.place_bombs(board, @num_of_bombs)
+      board_array = Array.new(9) { Array.new }
+      9.times{ |row| 9.times{ |col| board_array[row] << Tile.new(row, col) } }
+      self.class.place_bombs(board_array, @num_of_bombs)
+    end
 
-      board.each do |row|
+    def set_neighbors
+      @board.each do |row|
         row.each do |tile|
-          neighbor_pos = tile.neighbors
+          neighbor_pos = tile.find_neighbors
           neighbor_pos.each do |pos|
-            row, col = pos
-            tile.neighbors << board[row][col]
-          end
+            x, y = pos
+            tile.neighbors << @board[x][y]
+           end
         end
       end
-
-      board
     end
 
     def render
       current_board = translate_objects_to_symbols(@board)
 
-      current_board.each{ |row| p row }
+      current_board.each{ |row| puts row.join('_|_') }
+
+      return nil
     end
 
     def translate_objects_to_symbols(board)
@@ -112,7 +127,7 @@ module Minesweeper
     end
 
     def char_to_display(tile)
-      # return "B" if tile.bombed?
+      return "B" if tile.bombed?
       return "F" if tile.flagged?
       return "*" if !tile.revealed?
       return "_" if tile.neighbor_bomb_count == 0
@@ -139,6 +154,20 @@ module Minesweeper
       board
     end
 
+    def win?
+      won = true
+      @board.each do |row|
+        row.each do |tile|
+          won = false if (!tile.revealed? && !tile.bombed?)
+        end
+      end
+
+      won
+    end
+
+    def lose?
+
+    end
   end
 
   class Game
@@ -158,5 +187,18 @@ module Minesweeper
     end
 
 
+
+
   end
+
+  # class Player
+  #
+  #   def initialize
+  #     @player = player
+  #   end
+  #
+  #
+  #
+  # end
+
 end
