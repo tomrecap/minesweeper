@@ -78,6 +78,14 @@ module Minesweeper
       @flagged = (@flagged ? false : true)
     end
 
+    def char_to_display
+      # return "B" if bombed?
+      return "F" if flagged?
+      return "*" if !revealed?
+      return "_" if neighbor_bomb_count == 0
+      return neighbor_bomb_count.to_s if neighbor_bomb_count.to_i > 0
+    end
+
   end
 
   class Board
@@ -122,17 +130,9 @@ module Minesweeper
     def translate_objects_to_symbols(board)
       board.map do |row|
         row.map do |tile|
-          char_to_display(tile)
+          tile.char_to_display
         end
       end
-    end
-
-    def char_to_display(tile)
-      return "B" if tile.bombed?
-      return "F" if tile.flagged?
-      return "*" if !tile.revealed?
-      return "_" if tile.neighbor_bomb_count == 0
-      return tile.neighbor_bomb_count.to_s if tile.neighbor_bomb_count > 0
     end
 
     def self.place_bombs(board, num_of_bombs)
@@ -155,12 +155,27 @@ module Minesweeper
       board
     end
 
-# refactor win? & lose? into one method
-    def win?
-      won = true
+    def game_over?
+
+      game_is_over = true
+
       @board.each do |row|
         row.each do |tile|
           if !tile.revealed? && !tile.bombed?
+            game_is_over = false
+          end
+        end
+      end
+
+      game_is_over
+    end
+
+    def win?
+      won = true
+
+      @board.each do |row|
+        row.each do |tile|
+          if tile.revealed? && tile.bombed?
             won = false
           end
         end
@@ -189,13 +204,15 @@ module Minesweeper
     end
 
     def play
+      puts "Play has started"
       @board.render
 
-      loop do
+      until @board.game_over?
         action, pos = player_turn
+        return if action == "q"
+
         execute_move(action, pos)
 
-        break if game_over?
         @board.render
       end
 
@@ -208,15 +225,15 @@ module Minesweeper
       @board.render
     end
 
-    def game_over?
-      @board.lose? || @board.win?
-    end
-
     def player_turn
-      puts "What would you like to do? (r, f, s)"
+      puts "What would you like to do? (r, f, s, q)"
       action = gets.chomp
-      puts "Where would you like to do that? (x,y)"
-      pos = gets.chomp.split(",")
+      unless action == "s" || action == "q"
+        puts "Where would you like to do that? (x,y)"
+        pos = gets.chomp.split(",")
+      else
+        pos = nil
+      end
 
       return [action, pos]
     end
@@ -238,11 +255,26 @@ module Minesweeper
 
       puts "What would you like to call your save game?"
       save_name = gets.chomp
-      File.open("saves/#{save_name}.ms", "w") do |line|
-        line.puts board_save_state
+      File.open("#{save_name}.ms", "w") do |line|
+        line.write(board_save_state)
       end
 
       puts "Saved!"
     end
   end
+end
+
+if __FILE__ == $PROGRAM_NAME
+
+  unless ARGV.empty?
+    # read file
+    file_name = ARGV.shift
+    contents = File.read(file_name)
+    board = YAML::load(contents)
+
+    Minesweeper::Game.new(board).play
+  else
+    Minesweeper::Game.new
+  end
+
 end
