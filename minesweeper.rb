@@ -29,25 +29,22 @@ module Minesweeper
     end
 
     def reveal
-      # if revealed?
-      #   # error, you can't reveal it twice
-      # elsif bombed?
-      #   # game ends, you lose
-      # elsif flagged?
-      #   # you can't reveal it until you unflag it
-      # else
-
+      if revealed?
+        return nil
+      elsif flagged?
+        return nil
+      else
         @revealed = true
         @neighbor_bomb_count = set_neighbor_bomb_count
 
         if @neighbor_bomb_count == 0
           @neighbors.each do |neighbor|
-            neighbor.reveal unless neighbor.revealed?
+            neighbor.reveal
           end
         end
+      end
 
-        nil
-      # end
+      nil
     end
 
     def to_s
@@ -77,6 +74,11 @@ module Minesweeper
 
       adjacent_bombs
     end
+
+    def set_flag
+     @flagged = (@flagged ? false : true)
+    end
+
   end
 
   class Board
@@ -154,6 +156,7 @@ module Minesweeper
       board
     end
 
+# doesn't deal with flags
     def win?
       won = true
       @board.each do |row|
@@ -166,7 +169,15 @@ module Minesweeper
     end
 
     def lose?
+      lost = false
 
+      @board.each do |row|
+        row.each do |tile|
+          lost = true if (tile.bombed? && tile.revealed?)
+        end
+      end
+
+      lost
     end
   end
 
@@ -177,6 +188,14 @@ module Minesweeper
     end
 
     def play
+      @board.render
+
+      loop do
+        action, pos = player_turn
+        move_result = execute_move(action, pos)
+
+        break if game_over?
+      end
 
       # display the board
       # prompt for move
@@ -186,8 +205,27 @@ module Minesweeper
 
     end
 
+    def game_over?
+      @board.board.lose? || @board.board.win?
+    end
 
+    def player_turn
+      puts "What would you like to do? (r, f)"
+      action = gets.chomp
+      puts "Where would you like to do that? (x,y)"
+      pos = gets.chomp.split(",")
 
+      return [action, pos]
+    end
+
+    def execute_move(action, pos)
+      x, y = pos
+      if action == "r"
+        @board.board[x][y].reveal
+      elsif action == "f"
+        @board.board[x][y].set_flag
+      end
+    end
 
   end
 
