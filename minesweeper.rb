@@ -1,4 +1,5 @@
 require 'debugger'
+require 'yaml'
 
 module Minesweeper
   class Tile
@@ -14,18 +15,15 @@ module Minesweeper
     end
 
     def bombed?
-      return true if @bombed
-      false
+      @bombed
     end
 
     def flagged?
-      return true if @flagged
-      false
+      @flagged
     end
 
     def revealed?
-      return true if @revealed
-      false
+      @revealed
     end
 
     def reveal
@@ -157,7 +155,7 @@ module Minesweeper
       board
     end
 
-# doesn't deal with flags
+# refactor win? & lose? into one method
     def win?
       won = true
       @board.each do |row|
@@ -208,12 +206,6 @@ module Minesweeper
       end
 
       @board.render
-      # display the board
-      # prompt for move
-      # execute the move
-
-      # break if user quits or game is over
-
     end
 
     def game_over?
@@ -221,7 +213,7 @@ module Minesweeper
     end
 
     def player_turn
-      puts "What would you like to do? (r, f)"
+      puts "What would you like to do? (r, f, s)"
       action = gets.chomp
       puts "Where would you like to do that? (x,y)"
       pos = gets.chomp.split(",")
@@ -235,20 +227,22 @@ module Minesweeper
         @board.board[x.to_i][y.to_i].reveal
       elsif action == "f"
         @board.board[x.to_i][y.to_i].set_flag
+      elsif action == "s"
+        save
       end
       nil
     end
 
+    def save
+      board_save_state = @board.to_yaml
+
+      puts "What would you like to call your save game?"
+      save_name = gets.chomp
+      File.open("saves/#{save_name}.ms", "w") do |line|
+        line.puts board_save_state
+      end
+
+      puts "Saved!"
+    end
   end
-
-  # class Player
-  #
-  #   def initialize
-  #     @player = player
-  #   end
-  #
-  #
-  #
-  # end
-
 end
