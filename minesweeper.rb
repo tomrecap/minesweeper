@@ -274,7 +274,7 @@ if __FILE__ == $PROGRAM_NAME
 
     Minesweeper::Game.new(board).play
   else
-    Minesweeper::Game.new
+    Minesweeper::Game.new.play
   end
 
 end
